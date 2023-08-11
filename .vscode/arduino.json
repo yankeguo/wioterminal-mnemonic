@@ -1,0 +1,8 @@
+{
+    "configuration": "role=master,cache=on,speed=120,opt=small,maxqspi=50,usbstack=arduino,debug=off,txrxled=on",
+    "board": "Seeeduino:samd:seeed_wio_terminal",
+    "port": "/dev/tty.usbmodem1101",
+    "programmer": "adafruit_jlink",
+    "sketch": "wioterminal-mnemonic.ino",
+    "output": "build"
+}

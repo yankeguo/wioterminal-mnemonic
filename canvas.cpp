@@ -156,8 +156,10 @@ Canvas *Canvas::progress(int value, int max)
     return this;
 }
 
-Canvas *Canvas::cube(int fill)
+Canvas *Canvas::cube(int opt)
 {
+    int fill = opt & 1;
+    int underscore = opt & (1 << 1);
     int w = LINE_HEIGHT - 2 * GAP;
     int h = LINE_HEIGHT - 2 * GAP;
     int x = this->_x + GAP;
@@ -167,6 +169,10 @@ Canvas *Canvas::cube(int fill)
     {
         this->_internal->tft->drawLine(x + 1, y + 1, x + w - 2, y + h - 2, TFT_WHITE);
         this->_internal->tft->drawLine(x + 1, y + h - 2, x + w - 2, y + 1, TFT_WHITE);
+    }
+    if (underscore)
+    {
+        this->_internal->tft->drawRect(x + 1, y + h - 2 * GAP, w - 2, GAP * 3, TFT_WHITE);
     }
     this->_nextX = LINE_HEIGHT;
     this->_nextY = LINE_HEIGHT;

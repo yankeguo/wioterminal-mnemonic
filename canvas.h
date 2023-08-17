@@ -45,7 +45,7 @@ public:
 
     Canvas *progress(int value, int max);
 
-    Canvas *cube(int fill);
+    Canvas *cube(int opt);
 
 private:
     int _x;

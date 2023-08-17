@@ -47,6 +47,9 @@ int mnemonics[MNEMONIC_WORDS];
 
 int battery_ready = 0;
 
+int recovery_bits[WORDLIST_BITS + 1];
+int recovery_cursor = 0;
+
 /**********************************************************************
  *                                UI                                  *
  **********************************************************************/
@@ -59,7 +62,8 @@ int battery_ready = 0;
 
 #define TAB_ENTROPY 0
 #define TAB_MNEMONIC 1
-#define TAB_BATTERY 2
+#define TAB_RECOVERY 2
+#define TAB_BATTERY 3
 
 #define PEAK_INPUTS 8
 
@@ -75,6 +79,7 @@ const char *TAB_INDICATOR = "<- PREV  NEXT ->";
 const char *TAB_NAMES[] = {
     "ENTROPY",
     "MNEMONIC",
+    "RECOVERY",
     "BATTERY",
 };
 
@@ -205,6 +210,49 @@ void ui_draw_tab_mnemonic()
     canvas.resetX();
 }
 
+void ui_draw_tab_recovery()
+{
+    int v = 0;
+
+    for (int i = 0; i < (WORDLIST_BITS + 1); i++)
+    {
+        int b = recovery_bits[i] ? 1 : 0;
+        int u = recovery_cursor == i ? 1 : 0;
+
+        v = v | b << (WORDLIST_BITS - i);
+
+        canvas.cube(b | (u << 1))->nextX();
+
+        if (i % 4 == 3)
+        {
+            canvas.addX(8);
+        }
+    }
+
+    canvas.nextY()->nextY()->resetX();
+
+    if (v < 1 || v > WORDLIST_SIZE)
+    {
+        canvas.string("INVALID")->nextY();
+        return;
+    }
+
+    v = v - 1;
+
+    canvas.string(WORDLIST[v]);
+
+    canvas.nextY()->nextY()->resetX();
+
+    canvas.string("DECIMAL")->addX(100)->string("BINARY")->resetX()->nextY();
+
+    canvas.stringf("%d", v)->addX(100);
+
+    for (int i = 0; i < WORDLIST_BITS; i++)
+    {
+        canvas.stringf("%d", (v >> (WORDLIST_BITS - 1 - i)) & 1)->nextX();
+    }
+}
+
 void ui_draw_tab_battery()
 {
     if (!battery_ready)
@@ -305,6 +353,51 @@ void entropy_finish()
 }
 
 /**********************************************************************
+ *                             RECOVERY                               *
+ **********************************************************************/
+
+void recovery_setup()
+{
+    memset(recovery_bits, 0, sizeof(recovery_bits));
+}
+
+void recovery_move_cursor(int d)
+{
+    int idx = recovery_cursor + d;
+    if (idx >= (WORDLIST_BITS + 1))
+    {
+        idx = 0;
+    }
+    else if (idx < 0)
+    {
+        idx = WORDLIST_BITS;
+    }
+    recovery_cursor = idx;
+    ui_redraw();
+}
+
+void recovery_set_and_next(int v)
+{
+    if (v)
+    {
+        v = 1;
+    }
+    else
+    {
+        v = 0;
+    }
+    recovery_bits[recovery_cursor] = v;
+    recovery_move_cursor(1);
+}
+
+void recovery_reset()
+{
+    memset(recovery_bits, 0, sizeof(recovery_bits));
+    recovery_cursor = 0;
+    ui_redraw();
+}
+
+/**********************************************************************
  *                        BUTTON HANDLERS                             *
  **********************************************************************/
 
@@ -365,6 +458,7 @@ void setup_battery()
 void setup(void)
 {
     entropy_setup();
+    recovery_setup();
     canvas.setup();
     setup_buttons();
     setup_battery();
@@ -400,6 +494,10 @@ void loop()
             {
                 ui_switch_mnemonic(-1);
             }
+            if (ui_idx_tab == TAB_RECOVERY)
+            {
+                recovery_set_and_next(1);
+            }
             break;
         case WIO_5S_DOWN:
             if (ui_idx_tab == TAB_ENTROPY)
@@ -410,17 +508,29 @@ void loop()
             {
                 ui_switch_mnemonic(1);
             }
+            if (ui_idx_tab == TAB_RECOVERY)
+            {
+                recovery_set_and_next(0);
+            }
             break;
         case WIO_5S_LEFT:
             if (ui_idx_tab == TAB_ENTROPY)
             {
                 entropy_feed(3);
             }
+            if (ui_idx_tab == TAB_RECOVERY)
+            {
+                recovery_move_cursor(-1);
+            }
             break;
         case WIO_5S_RIGHT:
             if (ui_idx_tab == TAB_ENTROPY)
             {
                 entropy_feed(4);
+            }
+            if (ui_idx_tab == TAB_RECOVERY)
+            {
+                recovery_move_cursor(1);
             }
             break;
         case WIO_5S_PRESS:
@@ -430,6 +540,10 @@ void loop()
                 {
                     entropy_finish();
                 }
+            }
+            if (ui_idx_tab == TAB_RECOVERY)
+            {
+                recovery_reset();
             }
             if (ui_idx_tab == TAB_BATTERY)
             {
@@ -453,6 +567,11 @@ void loop()
         if (ui_idx_tab == TAB_MNEMONIC)
         {
             ui_draw_tab_mnemonic();
+        }
+
+        if (ui_idx_tab == TAB_RECOVERY)
+        {
+            ui_draw_tab_recovery();
         }
 
         if (ui_idx_tab == TAB_BATTERY)

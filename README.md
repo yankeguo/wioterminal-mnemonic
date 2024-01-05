@@ -23,10 +23,6 @@ An **Arduino** sketch that creates BIP39 mnemonic with **Wio Terminal**
 - Use **5-way Stick** to feed entropy
 - Once complete, switch to **MNEMONIC** tab to view the mnemonic
 
-## Donation
-
-View https://guoyk.xyz/donation
-
 ## Credits
 
 GUO YANKE, MIT License
